@@ -98,33 +98,91 @@ class MovieView(Resource):
         try:
             movie = db.session.query(Movie).filter(Movie.id == uid).one()
             return MovieSchema().dump(movie), 200
+
         except Exception as e:
             return str(e), 404
 
     def put(self, uid: int):
-        movie = db.session.query(Movie).get(uid)
-        req_json = request.json
-        movie.id = req_json.get("id")
-        movie.title = req_json.get("title")
-        movie.description = req_json.get("description")
-        movie.trailer = req_json.get("trailer")
-        movie.year = req_json.get("year")
-        movie.rating = req_json.get("rating")
-        movie.genre_id = req_json.get("genre_id")
-        movie.director_id = req_json.get("director_id")
+        try:
+            movie = db.session.query(Movie).filter(Movie.id == uid).one()
+            req_json = request.json
+            movie.id = req_json.get("id")
+            movie.title = req_json.get("title")
+            movie.description = req_json.get("description")
+            movie.trailer = req_json.get("trailer")
+            movie.year = req_json.get("year")
+            movie.rating = req_json.get("rating")
+            movie.genre_id = req_json.get("genre_id")
+            movie.director_id = req_json.get("director_id")
 
-        with db.session.begin():
-            db.session.add(movie)
+            with db.session.begin():
+                db.session.add(movie)
 
-        return "", 204
+            return "", 200
+
+        except Exception as e:
+            return str(e), 404
 
     def delete(self, uid: int):
-        movie = db.session.query(Movie).get(uid)
+        try:
+            movie = db.session.query(Movie).filter(Movie.id == uid).one()
+
+            with db.session.begin():
+                db.session.delete(movie)
+
+            return "", 204
+        except Exception as e:
+            return str(e), 404
+
+
+@directors_ns.route('/')
+class DirectorsView(Resource):
+    def get(self):
+        all_directors = db.session.query(Director).all()
+        return DirectorSchema(many=True).dump(all_directors), 200
+
+    def post(self):
+        req_json = request.json
+        new_director = Director(**req_json)
 
         with db.session.begin():
-            db.session.delete(movie)
+            db.session.add(new_director)
 
-        return "", 204
+        return "", 201
+
+
+@directors_ns.route('/<int:uid>')
+class DirectorView(Resource):
+    def get(self, uid: int):
+        try:
+            director = db.session.query(Director).filter(Director.id == uid).one()
+            return DirectorSchema().dump(director), 200
+        except Exception as e:
+            return str(e), 404
+
+    def put(self, uid: int):
+        try:
+            req_json = request.json
+            director = db.session.query(Director).filter(Director.id == uid).one()
+            director.id = req_json.get('id')
+            director.name = req_json.get('name')
+
+            with db.session.begin():
+                db.session.add(director)
+
+            return "", 200
+        except Exception as e:
+            return str(e), 404
+
+    def delete(self, uid: int):
+        try:
+            director = db.session.query(Director).filter(Director.id == uid).one()
+
+            with db.session.begin():
+                db.session.delete(director)
+            return "", 204
+        except Exception as e:
+            return str(e), 404
 
 
 if __name__ == '__main__':
